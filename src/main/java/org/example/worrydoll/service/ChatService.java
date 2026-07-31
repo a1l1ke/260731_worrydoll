@@ -7,11 +7,16 @@ import org.example.worrydoll.repository.ChatMessageJpaRepository;
 import org.example.worrydoll.repository.ChatMessageRepository;
 import org.example.worrydoll.repository.ChatUserRepository;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @Service
@@ -34,6 +39,8 @@ public class ChatService {
     }
 
     private final ChatClient chatClient;
+    // import org.springframework.ai.vectorstore.VectorStore;
+    private final VectorStore vectorStore;
 
     @Transactional
     public void chat(String conversationId, String content) {
@@ -43,11 +50,31 @@ public class ChatService {
                 .user(content)
                 .call() // 여기까지만 있으면 호출 X
                 .content();
+        // import org.springframework.ai.document.Document;
+        vectorStore.add(List.of(
+                Document.builder()
+                        .text(content)
+                        .metadata(Map.of("conversationId", conversationId))
+                        .build()
+        ));
     }
 
     private final ChatMessageJpaRepository jpaRepository;
 
     public List<ChatMessage> getChatMessages(String conversationId) {
         return jpaRepository.findAllByConversationId(conversationId);
+    }
+
+    @Qualifier("ragChatClient")
+    private final ChatClient ragChatClient;
+
+    public String search(String query, String conversationId) {
+        return ragChatClient.prompt()
+                .advisors(a -> a.param(
+                        QuestionAnswerAdvisor.FILTER_EXPRESSION,
+                        "conversationId == '%s'".formatted(conversationId)))
+                .user(query)
+                .call()
+                .content();
     }
 }
