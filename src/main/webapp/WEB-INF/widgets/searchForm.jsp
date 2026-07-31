@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:choose>
     <c:when test="${not empty chatUser}">
-        <c:url var="seachUrl" value="/chat" />
+        <c:url var="seachUrl" value="/search" />
         <form action="${seachUrl}" method="post">
             <label>
                 <input name="query" placeholder="검색할 내용">
