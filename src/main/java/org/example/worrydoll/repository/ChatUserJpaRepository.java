@@ -6,5 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ChatUserJpaRepository extends JpaRepository<ChatUser, Long> {
+    // 쿼리 메소드
     Optional<ChatUser> findByUsername(String username);
 }
